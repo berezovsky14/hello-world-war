@@ -1,3 +1,4 @@
+
 pipeline {
    
     agent any
@@ -15,10 +16,8 @@ pipeline {
             }
         }
         stage('SonarQube Analysis') {
-            def mvnHome =  tool name: 'maven-3', type: 'maven'
             withSonarQubeEnv('sonar-6') { 
-              sh "${mvnHome}/bin/mvn sonar:sonar"
+              sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.2:sonar'
         }
     }
     }
-}
