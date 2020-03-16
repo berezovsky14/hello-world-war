@@ -10,12 +10,7 @@
        
 	<build>
 
-		<properties>
-  <sonar.projectKey>berezovsky14_hello-world-war</sonar.projectKey>
-  <sonar.organization>berezovsky14</sonar.organization>
-  <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-  <sonar.login>4f1052b43da6246f696f9d7026dde006088dcb0f</sonar.login>
-</properties>
+		
 		
 		<plugins>
 			<plugin>
