@@ -1,5 +1,4 @@
 
-node('master'){
     
         notifyBuild('STARTED')
         stage('1. Checking Out Code'){
@@ -33,4 +32,3 @@ node('master'){
             notifyBuild(currentBuild.result)
         }
     
-}
