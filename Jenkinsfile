@@ -1,33 +1,44 @@
 
     
-        stage('1. Checking Out Code'){
-            checkout([$class: 'GitSCM', branches: [[name: '*/dev']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'Git-Creds', url: 'https://github.com/SaraBenShabbat/hello-world-war.git']]])
-        }
-        stage('2. Building'){
-            sh label: '', script: "mvn clean package"
-        }
-        stage('3. Analyzing'){
-            sh label: '', script: '''cd /opt/tomcat/.jenkins/workspace/No.6_module-FinalProject
-                                      mvn verify sonar:sonar'''
-        }
-        stage('4. Building Dockerfile'){
-            sh label: '', script: '''cp /opt/tomcat/.jenkins/workspace/No.6_module-FinalProject/target/hello-world-war-1.0.0.war /opt/tomcat/.jenkins/workspace/No.6_module-FinalProject
-                                     docker build .'''
-        }
-        stage('5. Tagging Docker Image'){
-            sh label: '', script: 'docker tag $(docker images | grep \'<none>\' | head -n 1 | awk \'{print $3}\') java-app:${BUILD_ID}'
-        }
-        stage('6. Uploading Image To Nexus'){
-            withCredentials([usernamePassword(credentialsId: 'Nexus-Docker', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                sh label: '', script: '''docker login -u $USERNAME -p $PASSWORD 192.168.1.233:8082
-                                         docker tag java-app:${BUILD_ID} 192.168.1.233:8082/java-app:${BUILD_ID}
-                                         docker push 192.168.1.233:8082/java-app:${BUILD_ID}
-                                         docker rmi $(docker images --filter=reference="192.168.1.233:8082/java-app*" -q) -f
-                                         docker logout 192.168.1.233'''
-            }
-        
-  
-        stage('7. Notifying Slack'){
-            notifyBuild(currentBuild.result)
-        }
-    
+     def notifySlack(String buildStatus = 'STARTED') {
+    // Build status of null means success.
+    buildStatus = buildStatus ?: 'SUCCESS'
+    def color
+    if (buildStatus == 'STARTED') {
+        color = '#D4DADF'
+    } else if (buildStatus == 'SUCCESS') {
+        color = '#BDFFC3'
+    } else if (buildStatus == 'UNSTABLE') {
+        color = '#FFFE89'
+    } else {
+        color = '#FF9FA1'
+    }
+    def msg = "${buildStatus}: `${env.JOB_NAME}` #${env.BUILD_NUMBER}:\n${env.BUILD_URL}"
+    slackSend(color: color, message: msg)
+}
+node('centos-docker') {
+stage('check-out-code') {
+      checkout([$class: 'GitSCM', branches: [[name: "${branch}"]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'git-creds', url: 'https://github.com/lidorg-dev/final-project.git']]])
+}
+stage('Build') {
+   sh label: '', script: "docker build -t sarah-app:${env.BUILD_ID} ."
+}
+stage('Test') {
+}
+stage('Publish') {
+   withDockerRegistry(credentialsId: 'docker-hub') {
+  sh label: '', script: "docker tag sarah-app:${env.BUILD_ID} lidorlg/sarah-app:${env.BUILD_ID} && docker push lidorlg/sarah-app:${env.BUILD_ID}"
+}
+}
+stage('Notify Slack') {
+  try {
+       notifySlack()
+       // Existing build steps.
+   } catch (e) {
+       currentBuild.result = 'FAILURE'
+       throw e
+   } finally {
+       notifySlack(currentBuild.result)
+   }
+}
+
