@@ -1,6 +1,5 @@
 
     
-        notifyBuild('STARTED')
         stage('1. Checking Out Code'){
             checkout([$class: 'GitSCM', branches: [[name: '*/dev']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'Git-Creds', url: 'https://github.com/SaraBenShabbat/hello-world-war.git']]])
         }
