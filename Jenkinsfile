@@ -39,4 +39,4 @@ stage('Notify Slack') {
        notifySlack(currentBuild.result)
    }
 }
-
+}
